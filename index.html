@@ -1,0 +1,195 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lancar Bicara</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f1f5f7;color:#20313b;font:16px Arial,sans-serif}
+header{background:linear-gradient(135deg,#123b52,#087e8b);color:white;padding:28px 20px;border-radius:0 0 24px 24px}
+main{max-width:720px;margin:auto;padding:16px}
+h1{margin:0 0 8px}h2{font-size:19px}
+.card{background:white;padding:20px;margin-bottom:15px;border-radius:18px;box-shadow:0 3px 14px #123b520c}
+label{display:block;font-size:13px;font-weight:bold;margin:12px 0 6px}
+select,textarea,button{font:inherit;padding:12px;border-radius:10px;border:1px solid #d5e0e5}
+select,textarea{width:100%;background:white}
+textarea{min-height:130px;line-height:1.5}
+button{cursor:pointer;font-weight:bold}
+.primary{background:#087e8b;color:white;border-color:#087e8b}
+.secondary{background:#eaf3f5;color:#123b52}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.actions button{flex:1}
+.question{font-size:23px;font-weight:bold;line-height:1.4;margin:18px 0}
+.timer{font-size:38px;font-weight:bold;color:#087e8b;margin:14px 0}
+.tip{background:#edf7f7;padding:12px;border-left:4px solid #087e8b;line-height:1.5}
+.score{display:flex;gap:8px}
+.score div{background:#edf4f6;padding:12px;border-radius:10px;flex:1;text-align:center}
+.score b{display:block;font-size:25px;color:#087e8b}
+small{color:#64747c}
+</style>
+</head>
+<body>
+<header>
+<h1>Lancar Bicara 🎙️</h1>
+<p>Pelatih Public Speaking Bahasa Indonesia</p>
+</header>
+<main>
+<section class="card">
+<h2>1. Pilih latihan</h2>
+<label for="mode">Jenis latihan</label>
+<select id="mode">
+<option value="spontan">Kelancaran spontan</option>
+<option value="kerja">Rapat dan dunia kerja</option>
+<option value="wawancara">Simulasi wawancara</option>
+<option value="presentasi">Presentasi terstruktur</option>
+<option value="debat">Opini dan debat</option>
+</select>
+<label for="durasi">Durasi</label>
+<select id="durasi">
+<option value="30">30 detik</option>
+<option value="60" selected>1 menit</option>
+<option value="120">2 menit</option>
+</select>
+<div class="question" id="q">Ceritakan satu hal yang Anda pelajari minggu ini dan mengapa hal itu penting.</div>
+<div class="actions">
+<button class="secondary" onclick="pertanyaan()">Pertanyaan berikutnya</button>
+<button class="secondary" onclick="bacakan()">🔊 Bacakan</button>
+</div>
+</section>
+
+<section class="card">
+<h2>2. Mulai berbicara</h2>
+<div class="tip">Gunakan pola: pembukaan → dua atau tiga poin utama → kesimpulan. Berbicaralah dengan tenang dan jangan takut berhenti sejenak untuk berpikir.</div>
+<div id="status" aria-live="polite">Siap berlatih. Tekan Mulai latihan.</div>
+<div class="timer" id="timer">01:00</div>
+<div class="actions">
+<button class="primary" onclick="mulai()">▶ Mulai latihan</button>
+<button class="primary" onclick="rekam()">🎙 Bicara</button>
+<button class="secondary" onclick="selesai()">Selesai</button>
+</div>
+<label for="jawaban">Jawaban Anda</label>
+<textarea id="jawaban" placeholder="Jawaban dari mikrofon akan muncul di sini. Anda juga bisa mengetik."></textarea>
+<div class="actions">
+<button class="primary" onclick="nilai()">Evaluasi jawaban</button>
+<button class="secondary" onclick="bersihkan()">Hapus</button>
+</div>
+<small>Pengenalan suara bergantung pada dukungan browser dan koneksi internet.</small>
+</section>
+
+<section class="card" id="hasil" hidden>
+<h2>3. Evaluasi latihan</h2>
+<div class="score">
+<div><b id="s1">0</b><small>Kelengkapan</small></div>
+<div><b id="s2">0</b><small>Struktur</small></div>
+<div><b id="s3">0</b><small>Keringkasan</small></div>
+</div>
+<p id="saran"></p>
+<div class="tip">Latihan berikutnya: buka dengan kalimat inti, sampaikan dua alasan atau contoh, lalu simpulkan dalam satu kalimat.</div>
+</section>
+</main>
+<script>
+const bank={
+spontan:[
+"Ceritakan satu hal yang Anda pelajari minggu ini dan mengapa hal itu penting.",
+"Apa kebiasaan yang ingin Anda perbaiki? Jelaskan alasannya.",
+"Menurut Anda, apa ciri orang yang mampu berkomunikasi dengan baik?",
+"Jika memiliki satu jam waktu luang setiap hari, bagaimana Anda memanfaatkannya?"
+],
+kerja:[
+"Bagaimana Anda membantu rekan kerja yang kesulitan menyelesaikan tugas?",
+"Jika laporan harus selesai tetapi data terlambat, apa langkah Anda?",
+"Bagaimana menyampaikan perbedaan pendapat secara profesional dalam rapat?",
+"Apa prioritas Anda ketika beberapa pekerjaan penting datang bersamaan?"
+],
+wawancara:[
+"Ceritakan pengalaman kerja yang paling membanggakan.",
+"Mengapa Anda siap menerima tanggung jawab kepemimpinan?",
+"Apa kelemahan profesional yang sedang Anda perbaiki?",
+"Bagaimana menghadapi anggota tim yang kurang disiplin?"
+],
+presentasi:[
+"Jelaskan sebuah masalah, penyebab utama, dan solusi yang Anda usulkan.",
+"Presentasikan tiga langkah untuk meningkatkan pelayanan publik.",
+"Jelaskan topik yang Anda kuasai kepada orang yang baru mengenalnya."
+],
+debat:[
+"Mana yang lebih penting bagi pemimpin: ketegasan atau empati?",
+"Apakah media sosial lebih banyak memberi manfaat atau mudarat?",
+"Apakah teknologi membuat komunikasi manusia lebih baik?"
+]};
+let terakhir={},sisa=60,interval=null,pengenal=null;
+const el=id=>document.getElementById(id);
+function pertanyaan(){
+ const m=el("mode").value,a=bank[m];let i=Math.floor(Math.random()*a.length);
+ if(a.length>1&&i===terakhir[m])i=(i+1)%a.length;
+ terakhir[m]=i;el("q").textContent=a[i];el("hasil").hidden=true;
+}
+function bacakan(){
+ if(!("speechSynthesis" in window)){el("status").textContent="Fitur suara tidak didukung browser.";return}
+ speechSynthesis.cancel();
+ const u=new SpeechSynthesisUtterance(el("q").textContent);
+ u.lang="id-ID";speechSynthesis.speak(u);
+}
+function tampilTimer(){
+ el("timer").textContent=String(Math.floor(sisa/60)).padStart(2,"0")+":"+String(sisa%60).padStart(2,"0");
+}
+function selesai(){
+ if(interval){clearInterval(interval);interval=null}
+ if(pengenal){try{pengenal.stop()}catch(e){}}
+ el("status").textContent="Latihan selesai. Anda bisa mengevaluasi jawaban.";
+}
+function mulai(){
+ selesai();sisa=Number(el("durasi").value);tampilTimer();
+ el("status").textContent="Waktu berjalan. Mulailah berbicara.";
+ interval=setInterval(()=>{
+  sisa--;tampilTimer();
+  if(sisa<=0){clearInterval(interval);interval=null;el("status").textContent="Waktu habis. Evaluasi jawaban Anda."}
+ },1000);
+}
+function rekam(){
+ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!SR){el("status").textContent="Browser tidak mendukung pengenalan suara. Coba Chrome terbaru atau ketik jawaban.";return}
+ if(pengenal){try{pengenal.stop()}catch(e){}}
+ pengenal=new SR();pengenal.lang="id-ID";pengenal.continuous=true;pengenal.interimResults=false;
+ pengenal.onstart=()=>el("status").textContent="Mendengarkan. Silakan mulai berbicara.";
+ pengenal.onresult=e=>{
+  let t="";
+  for(let i=e.resultIndex;i<e.results.length;i++)
+   if(e.results[i].isFinal)t+=e.results[i][0].transcript+" ";
+  el("jawaban").value+=" "+t;
+ };
+ pengenal.onerror=e=>el("status").textContent="Mikrofon: "+e.error+". Periksa izin mikrofon atau ketik jawaban.";
+ pengenal.onend=()=>el("status").textContent="Pengenalan suara berhenti. Periksa teks jawaban Anda.";
+ try{pengenal.start()}catch(e){el("status").textContent="Tidak dapat memulai mikrofon. Coba lagi."}
+}
+function bersihkan(){el("jawaban").value="";el("hasil").hidden=true}
+function nilai(){
+ const t=el("jawaban").value.trim();
+ if(!t){el("status").textContent="Silakan bicara atau ketik jawaban terlebih dahulu.";return}
+ const kata=t.split(/\s+/),l=t.toLowerCase();
+ const pembuka=/menurut saya|saya berpendapat|pertama|ada tiga hal|yang ingin saya/i.test(t);
+ const urut=/kedua|ketiga|selain itu|selanjutnya|di samping itu/i.test(t);
+ const tutup=/kesimpulannya|oleh karena itu|dengan demikian|jadi intinya|terima kasih/i.test(t);
+ const pengisi=(l.match(/\b(eee+|anu|uh|emm+|hmm+)\b/g)||[]).length;
+ const lengkap=Math.min(100,Math.round(kata.length/Math.max(35,Number(el("durasi").value)*1.1)*100));
+ const struktur=Math.min(100,35+(pembuka?20:0)+(urut?25:0)+(tutup?20:0));
+ const ringkas=Math.max(30,100-pengisi*12-(kata.length>220?15:0));
+ el("s1").textContent=lengkap;el("s2").textContent=struktur;el("s3").textContent=ringkas;
+ let s=[];
+ if(kata.length<35)s.push("Tambahkan alasan dan contoh konkret agar jawaban lebih lengkap.");
+ if(!pembuka)s.push("Awali dengan kalimat inti, misalnya 'Menurut saya…'.");
+ if(!urut)s.push("Gunakan urutan 'pertama, kedua, dan ketiga'.");
+ if(!tutup)s.push("Akhiri dengan kesimpulan yang tegas.");
+ if(pengisi)s.push("Kurangi kata pengisi. Jeda sejenak lebih baik daripada mengucapkan 'eee'.");
+ if(!s.length)s.push("Bagus! Pertahankan struktur dan tambahkan contoh spesifik.");
+ el("saran").textContent=s.join(" ");
+ el("hasil").hidden=false;
+ el("status").textContent="Evaluasi selesai. Lanjutkan ke pertanyaan berikutnya.";
+}
+el("durasi").addEventListener("change",()=>{selesai();sisa=Number(el("durasi").value);tampilTimer()});
+el("mode").addEventListener("change",pertanyaan);
+</script>
+</body>
+</html>
